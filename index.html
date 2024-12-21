@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>使劲点屏幕放烟花</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: black;
+        }
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="fireworksCanvas"></canvas>
+    <script>
+        const canvas = document.getElementById('fireworksCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const fireworks = [];
+        const particles = [];
+        const hearts = [];
+        const textBarrage = [];
+
+        class Firework {
+            constructor(x, targetY, color) {
+                this.x = x;
+                this.y = canvas.height;
+                this.targetY = targetY;
+                this.color = color;
+                this.speed = Math.random() * 1.7 + 2.1;
+                this.exploded = false;
+                this.tail = [];
+                this.wobble = Math.random() * 0.02 + 0.02;
+                this.angle = Math.random() > 0.5 ? 1 : -1;
+            }
+
+            update() {
+                this.tail.push({
+                    x: this.x + Math.sin(this.tail.length * this.wobble) * this.angle * 3,
+                    y: this.y,
+                });
+
+                if (this.tail.length > 20) {
+                    this.tail.shift();
+                }
+
+                this.y -= this.speed;
+
+                if (this.y <= this.targetY && !this.exploded) {
+                    this.exploded = true;
+                    this.explode();
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                for (let i = 0; i < this.tail.length; i++) {
+                    const opacity = i / this.tail.length;
+                    ctx.globalAlpha = opacity;
+                    ctx.arc(this.tail[i].x, this.tail[i].y, 2, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+
+                if (!this.exploded) {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, 4, 0, Math.PI * 2);
+                    ctx.fillStyle = this.color;
+                    ctx.fill();
+                }
+            }
+
+            explode() {
+                const particleCount = Math.random() * 80 + 120;
+                const spread = Math.PI * 2;
+                for (let i = 0; i < particleCount; i++) {
+                    const angle = Math.random() * spread;
+                    const speed = Math.random() * 2 + 1;
+                    const particleColor = this.color;
+                    particles.push(new Particle(this.x, this.y, particleColor, angle, speed));
+                }
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color, angle, speed) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.angle = angle;
+                this.speed = speed;
+                this.alpha = 1;
+                this.decay = Math.random() * 0.02 + 0.005;
+            }
+
+            update() {
+                this.x += Math.cos(this.angle) * this.speed;
+                this.y += Math.sin(this.angle) * this.speed;
+                this.alpha -= this.decay;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class Heart {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = 0;
+                this.alpha = 1;
+            }
+
+            update() {
+                this.size += 2; // 放大速度
+                this.alpha -= 0.02; // 逐渐透明
+                if (this.alpha <= 0) {
+                    this.alpha = 0;
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.bezierCurveTo(this.x - this.size / 2, this.y - this.size / 2, this.x - this.size, this.y + this.size / 3, this.x, this.y + this.size);
+                ctx.bezierCurveTo(this.x + this.size, this.y + this.size / 3, this.x + this.size / 2, this.y - this.size / 2, this.x, this.y);
+                ctx.fillStyle = `rgba(255, 0, 100, ${this.alpha})`;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        function createFirework() {
+            const colors = ['#FF1461', '#18FF92', '#5A87FF', '#FBF38C', '#FF5722', '#8E44AD'];
+            for (let i = 0; i < 1; i++) {  // 减少烟花数量
+                const x = Math.random() * canvas.width;
+                const targetY = Math.random() * canvas.height * 0.5 + 100;
+                const color = colors[Math.floor(Math.random() * colors.length)];
+                fireworks.push(new Firework(x, targetY, color));
+            }
+        }
+
+        function createBarrageText() {
+            const messages = ["跟着小胖混三天撑九顿"];
+            const message = messages[Math.floor(Math.random() * messages.length)];
+            const x = canvas.width;
+            const y = Math.random() * (canvas.height - 30);  // 随机 y 坐标
+            const speed = Math.random() * 2 + 2;  // 随机速度
+            textBarrage.push({
+                text: message,
+                x: x,
+                y: y,
+                speed: speed,
+                color: 'red'
+            });
+        }
+
+        function drawText() {
+            for (let i = 0; i < textBarrage.length; i++) {
+                const text = textBarrage[i];
+                ctx.font = "30px Arial";
+                ctx.fillStyle = text.color;
+                ctx.fillText(text.text, text.x, text.y);
+                text.x -= text.speed; // 文字向左滚动
+                if (text.x < -ctx.measureText(text.text).width) {
+                    textBarrage.splice(i, 1); // 移除已滚动出画布的文字
+                    i--; // 调整索引
+                }
+            }
+        }
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            fireworks.forEach((firework, index) => {
+                firework.update();
+                firework.draw();
+                if (firework.exploded) {
+                    fireworks.splice(index, 1);
+                }
+            });
+
+            particles.forEach((particle, index) => {
+                if (particle.alpha <= 0) {
+                    particles.splice(index, 1);
+                } else {
+                    particle.update();
+                    particle.draw();
+                }
+            });
+
+            hearts.forEach((heart, index) => {
+                heart.update();
+                heart.draw();
+                if (heart.alpha <= 0) {
+                    hearts.splice(index, 1);
+                }
+            });
+
+            drawText();  // 绘制滚动的弹幕文字
+
+            requestAnimationFrame(animate);
+        }
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const colors = ['#FF1461', '#18FF92', '#5A87FF', '#FBF38C', '#FF5722', '#8E44AD'];
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            fireworks.push(new Firework(x, y, color));
+            hearts.push(new Heart(x, y));
+        });
+
+        setInterval(createFirework, 2000);  // 调整为更长时间间隔
+        setInterval(createBarrageText, 1000);  // 每秒生成一个弹幕
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
