@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>使劲点屏幕放烟花</title>
+    <title>烟花自动播放声音</title>
     <style>
         body {
             margin: 0;
@@ -25,12 +25,9 @@
 
         const fireworks = [];
         const particles = [];
-        const hearts = [];
         const textBarrage = [];
-
-        // 加载烟花音效
         const fireworkSound = new Audio('firework-sound.mp3'); // 确保文件路径正确
-        fireworkSound.volume = 0.5; // 调整音量大小
+        fireworkSound.volume = 0.5; // 调整音量
 
         class Firework {
             constructor(x, targetY, color) {
@@ -84,8 +81,8 @@
 
             explode() {
                 // 播放烟花声音
-                fireworkSound.currentTime = 0; // 重置播放时间
-                fireworkSound.play(); // 播放音效
+                fireworkSound.currentTime = 0; // 重置音频时间
+                fireworkSound.play(); // 自动播放音效
 
                 const particleCount = Math.random() * 80 + 120;
                 const spread = Math.PI * 2;
@@ -134,6 +131,35 @@
             fireworks.push(new Firework(x, targetY, color));
         }
 
+        function createBarrageText() {
+            const messages = ["跟着小胖混三天撑九顿"];
+            const message = messages[Math.floor(Math.random() * messages.length)];
+            const x = canvas.width;
+            const y = Math.random() * (canvas.height - 30);  // 随机 y 坐标
+            const speed = Math.random() * 2 + 2;  // 随机速度
+            textBarrage.push({
+                text: message,
+                x: x,
+                y: y,
+                speed: speed,
+                color: 'red'
+            });
+        }
+
+        function drawText() {
+            for (let i = 0; i < textBarrage.length; i++) {
+                const text = textBarrage[i];
+                ctx.font = "30px Arial";
+                ctx.fillStyle = text.color;
+                ctx.fillText(text.text, text.x, text.y);
+                text.x -= text.speed; // 文字向左滚动
+                if (text.x < -ctx.measureText(text.text).width) {
+                    textBarrage.splice(i, 1); // 移除已滚动出画布的文字
+                    i--; // 调整索引
+                }
+            }
+        }
+
         function animate() {
             ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -155,9 +181,16 @@
                 }
             });
 
+            drawText(); // 绘制滚动的弹幕文字
+
             requestAnimationFrame(animate);
         }
 
+        // 自动生成烟花和弹幕
+        setInterval(createFirework, 2000);  // 每隔 2 秒生成一个烟花
+        setInterval(createBarrageText, 1000);  // 每秒生成一个弹幕
+
+        // 点击事件仅生成烟花动画，不播放声音
         canvas.addEventListener('click', (e) => {
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -167,10 +200,9 @@
             fireworks.push(new Firework(x, y, color));
         });
 
-        setInterval(createFirework, 2000); // 自动生成烟花
-
         animate();
 
+        // 窗口大小变化时更新画布大小
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
