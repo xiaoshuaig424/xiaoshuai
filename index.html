@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>烟花自动播放声音</title>
+    <title>烟花</title>
     <style>
         body {
             margin: 0;
@@ -26,8 +26,6 @@
         const fireworks = [];
         const particles = [];
         const textBarrage = [];
-        const fireworkSound = new Audio('firework-sound.mp3'); // 确保文件路径正确
-        fireworkSound.volume = 0.5; // 调整音量
 
         class Firework {
             constructor(x, targetY, color) {
@@ -38,22 +36,10 @@
                 this.speed = Math.random() * 1.7 + 2.1;
                 this.exploded = false;
                 this.tail = [];
-                this.wobble = Math.random() * 0.02 + 0.02;
-                this.angle = Math.random() > 0.5 ? 1 : -1;
             }
 
             update() {
-                this.tail.push({
-                    x: this.x + Math.sin(this.tail.length * this.wobble) * this.angle * 3,
-                    y: this.y,
-                });
-
-                if (this.tail.length > 20) {
-                    this.tail.shift();
-                }
-
                 this.y -= this.speed;
-
                 if (this.y <= this.targetY && !this.exploded) {
                     this.exploded = true;
                     this.explode();
@@ -61,16 +47,6 @@
             }
 
             draw() {
-                ctx.beginPath();
-                for (let i = 0; i < this.tail.length; i++) {
-                    const opacity = i / this.tail.length;
-                    ctx.globalAlpha = opacity;
-                    ctx.arc(this.tail[i].x, this.tail[i].y, 2, 0, Math.PI * 2);
-                    ctx.fillStyle = this.color;
-                    ctx.fill();
-                }
-                ctx.globalAlpha = 1;
-
                 if (!this.exploded) {
                     ctx.beginPath();
                     ctx.arc(this.x, this.y, 4, 0, Math.PI * 2);
@@ -80,17 +56,12 @@
             }
 
             explode() {
-                // 播放烟花声音
-                fireworkSound.currentTime = 0; // 重置音频时间
-                fireworkSound.play(); // 自动播放音效
-
                 const particleCount = Math.random() * 80 + 120;
                 const spread = Math.PI * 2;
                 for (let i = 0; i < particleCount; i++) {
                     const angle = Math.random() * spread;
                     const speed = Math.random() * 2 + 1;
-                    const particleColor = this.color;
-                    particles.push(new Particle(this.x, this.y, particleColor, angle, speed));
+                    particles.push(new Particle(this.x, this.y, this.color, angle, speed));
                 }
             }
         }
@@ -113,13 +84,12 @@
             }
 
             draw() {
-                ctx.save();
                 ctx.globalAlpha = this.alpha;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
                 ctx.fillStyle = this.color;
                 ctx.fill();
-                ctx.restore();
+                ctx.globalAlpha = 1;
             }
         }
 
@@ -135,8 +105,8 @@
             const messages = ["跟着小胖混三天撑九顿"];
             const message = messages[Math.floor(Math.random() * messages.length)];
             const x = canvas.width;
-            const y = Math.random() * (canvas.height - 30);  // 随机 y 坐标
-            const speed = Math.random() * 2 + 2;  // 随机速度
+            const y = Math.random() * (canvas.height - 30);
+            const speed = Math.random() * 2 + 2;
             textBarrage.push({
                 text: message,
                 x: x,
@@ -147,22 +117,22 @@
         }
 
         function drawText() {
+            ctx.font = "20px Arial"; // 改用较小字体提高兼容性
+            ctx.textBaseline = "top";
             for (let i = 0; i < textBarrage.length; i++) {
                 const text = textBarrage[i];
-                ctx.font = "30px Arial";
                 ctx.fillStyle = text.color;
                 ctx.fillText(text.text, text.x, text.y);
-                text.x -= text.speed; // 文字向左滚动
+                text.x -= text.speed;
                 if (text.x < -ctx.measureText(text.text).width) {
-                    textBarrage.splice(i, 1); // 移除已滚动出画布的文字
-                    i--; // 调整索引
+                    textBarrage.splice(i, 1);
+                    i--;
                 }
             }
         }
 
         function animate() {
-            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             fireworks.forEach((firework, index) => {
                 firework.update();
@@ -181,16 +151,14 @@
                 }
             });
 
-            drawText(); // 绘制滚动的弹幕文字
-
+            drawText();
             requestAnimationFrame(animate);
         }
 
         // 自动生成烟花和弹幕
-        setInterval(createFirework, 2000);  // 每隔 2 秒生成一个烟花
-        setInterval(createBarrageText, 1000);  // 每秒生成一个弹幕
+        setInterval(createFirework, 2000);
+        setInterval(createBarrageText, 2000);
 
-        // 点击事件仅生成烟花动画，不播放声音
         canvas.addEventListener('click', (e) => {
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -202,7 +170,6 @@
 
         animate();
 
-        // 窗口大小变化时更新画布大小
         window.addEventListener('resize', () => {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
