@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>烟花</title>
+    <title>使劲点屏幕放烟花</title>
     <style>
         body {
             margin: 0;
@@ -17,6 +17,7 @@
 </head>
 <body>
     <canvas id="fireworksCanvas"></canvas>
+    <audio id="fireworkSound" src="firework-sound.mp3" preload="auto"></audio>
     <script>
         const canvas = document.getElementById('fireworksCanvas');
         const ctx = canvas.getContext('2d');
@@ -25,7 +26,11 @@
 
         const fireworks = [];
         const particles = [];
+        const hearts = [];
         const textBarrage = [];
+
+        const fireworkSound = document.getElementById('fireworkSound');
+        fireworkSound.volume = 0.5;
 
         class Firework {
             constructor(x, targetY, color) {
@@ -35,7 +40,6 @@
                 this.color = color;
                 this.speed = Math.random() * 1.7 + 2.1;
                 this.exploded = false;
-                this.tail = [];
             }
 
             update() {
@@ -56,6 +60,9 @@
             }
 
             explode() {
+                fireworkSound.currentTime = 0;
+                fireworkSound.play();
+
                 const particleCount = Math.random() * 80 + 120;
                 const spread = Math.PI * 2;
                 for (let i = 0; i < particleCount; i++) {
@@ -93,6 +100,35 @@
             }
         }
 
+        class Heart {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = 0;
+                this.alpha = 1;
+            }
+
+            update() {
+                this.size += 2; // 放大速度
+                this.alpha -= 0.02; // 逐渐透明
+                if (this.alpha <= 0) {
+                    this.alpha = 0;
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.bezierCurveTo(this.x - this.size / 2, this.y - this.size / 2, this.x - this.size, this.y + this.size / 3, this.x, this.y + this.size);
+                ctx.bezierCurveTo(this.x + this.size, this.y + this.size / 3, this.x + this.size / 2, this.y - this.size / 2, this.x, this.y);
+                ctx.fillStyle = `rgba(255, 0, 100, ${this.alpha})`;
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
         function createFirework() {
             const colors = ['#FF1461', '#18FF92', '#5A87FF', '#FBF38C', '#FF5722', '#8E44AD'];
             const x = Math.random() * canvas.width;
@@ -117,11 +153,10 @@
         }
 
         function drawText() {
-            ctx.font = "20px Arial"; // 改用较小字体提高兼容性
-            ctx.textBaseline = "top";
+            ctx.font = "30px Arial";
+            ctx.fillStyle = 'red';
             for (let i = 0; i < textBarrage.length; i++) {
                 const text = textBarrage[i];
-                ctx.fillStyle = text.color;
                 ctx.fillText(text.text, text.x, text.y);
                 text.x -= text.speed;
                 if (text.x < -ctx.measureText(text.text).width) {
@@ -151,13 +186,17 @@
                 }
             });
 
+            hearts.forEach((heart, index) => {
+                heart.update();
+                heart.draw();
+                if (heart.alpha <= 0) {
+                    hearts.splice(index, 1);
+                }
+            });
+
             drawText();
             requestAnimationFrame(animate);
         }
-
-        // 自动生成烟花和弹幕
-        setInterval(createFirework, 2000);
-        setInterval(createBarrageText, 2000);
 
         canvas.addEventListener('click', (e) => {
             const rect = canvas.getBoundingClientRect();
@@ -166,7 +205,11 @@
             const colors = ['#FF1461', '#18FF92', '#5A87FF', '#FBF38C', '#FF5722', '#8E44AD'];
             const color = colors[Math.floor(Math.random() * colors.length)];
             fireworks.push(new Firework(x, y, color));
+            hearts.push(new Heart(x, y));
         });
+
+        setInterval(createFirework, 2000);
+        setInterval(createBarrageText, 1000);
 
         animate();
 
