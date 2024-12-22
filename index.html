@@ -28,6 +28,10 @@
         const hearts = [];
         const textBarrage = [];
 
+        // 加载烟花音效
+        const fireworkSound = new Audio('firework-sound.mp3'); // 确保文件路径正确
+        fireworkSound.volume = 0.5; // 调整音量大小
+
         class Firework {
             constructor(x, targetY, color) {
                 this.x = x;
@@ -79,6 +83,10 @@
             }
 
             explode() {
+                // 播放烟花声音
+                fireworkSound.currentTime = 0; // 重置播放时间
+                fireworkSound.play(); // 播放音效
+
                 const particleCount = Math.random() * 80 + 120;
                 const spread = Math.PI * 2;
                 for (let i = 0; i < particleCount; i++) {
@@ -118,72 +126,12 @@
             }
         }
 
-        class Heart {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.size = 0;
-                this.alpha = 1;
-            }
-
-            update() {
-                this.size += 2; // 放大速度
-                this.alpha -= 0.02; // 逐渐透明
-                if (this.alpha <= 0) {
-                    this.alpha = 0;
-                }
-            }
-
-            draw() {
-                ctx.save();
-                ctx.globalAlpha = this.alpha;
-                ctx.beginPath();
-                ctx.moveTo(this.x, this.y);
-                ctx.bezierCurveTo(this.x - this.size / 2, this.y - this.size / 2, this.x - this.size, this.y + this.size / 3, this.x, this.y + this.size);
-                ctx.bezierCurveTo(this.x + this.size, this.y + this.size / 3, this.x + this.size / 2, this.y - this.size / 2, this.x, this.y);
-                ctx.fillStyle = `rgba(255, 0, 100, ${this.alpha})`;
-                ctx.fill();
-                ctx.restore();
-            }
-        }
-
         function createFirework() {
             const colors = ['#FF1461', '#18FF92', '#5A87FF', '#FBF38C', '#FF5722', '#8E44AD'];
-            for (let i = 0; i < 1; i++) {  // 减少烟花数量
-                const x = Math.random() * canvas.width;
-                const targetY = Math.random() * canvas.height * 0.5 + 100;
-                const color = colors[Math.floor(Math.random() * colors.length)];
-                fireworks.push(new Firework(x, targetY, color));
-            }
-        }
-
-        function createBarrageText() {
-            const messages = ["跟着小胖混三天撑九顿"];
-            const message = messages[Math.floor(Math.random() * messages.length)];
-            const x = canvas.width;
-            const y = Math.random() * (canvas.height - 30);  // 随机 y 坐标
-            const speed = Math.random() * 2 + 2;  // 随机速度
-            textBarrage.push({
-                text: message,
-                x: x,
-                y: y,
-                speed: speed,
-                color: 'red'
-            });
-        }
-
-        function drawText() {
-            for (let i = 0; i < textBarrage.length; i++) {
-                const text = textBarrage[i];
-                ctx.font = "30px Arial";
-                ctx.fillStyle = text.color;
-                ctx.fillText(text.text, text.x, text.y);
-                text.x -= text.speed; // 文字向左滚动
-                if (text.x < -ctx.measureText(text.text).width) {
-                    textBarrage.splice(i, 1); // 移除已滚动出画布的文字
-                    i--; // 调整索引
-                }
-            }
+            const x = Math.random() * canvas.width;
+            const targetY = Math.random() * canvas.height * 0.5 + 100;
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            fireworks.push(new Firework(x, targetY, color));
         }
 
         function animate() {
@@ -207,16 +155,6 @@
                 }
             });
 
-            hearts.forEach((heart, index) => {
-                heart.update();
-                heart.draw();
-                if (heart.alpha <= 0) {
-                    hearts.splice(index, 1);
-                }
-            });
-
-            drawText();  // 绘制滚动的弹幕文字
-
             requestAnimationFrame(animate);
         }
 
@@ -227,11 +165,9 @@
             const colors = ['#FF1461', '#18FF92', '#5A87FF', '#FBF38C', '#FF5722', '#8E44AD'];
             const color = colors[Math.floor(Math.random() * colors.length)];
             fireworks.push(new Firework(x, y, color));
-            hearts.push(new Heart(x, y));
         });
 
-        setInterval(createFirework, 2000);  // 调整为更长时间间隔
-        setInterval(createBarrageText, 1000);  // 每秒生成一个弹幕
+        setInterval(createFirework, 2000); // 自动生成烟花
 
         animate();
 
